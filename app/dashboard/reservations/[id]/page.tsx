@@ -9,6 +9,24 @@ import {
 
 export const instant = false;
 
+type Guest = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  email: string | null;
+  country: string | null;
+  vehicle_reg: string | null;
+};
+
+type Place = {
+  id: string;
+  code: string;
+  name: string;
+  place_type: string;
+  has_power: boolean;
+};
+
 export default async function ReservationPage({
   params,
   searchParams,
@@ -90,11 +108,21 @@ export default async function ReservationPage({
     );
   }
 
-  const guest =
+  const guestRelation =
     reservation.guests;
 
-  const place =
+  const guest: Guest | null =
+    Array.isArray(guestRelation)
+      ? (guestRelation[0] as Guest | undefined) ?? null
+      : (guestRelation as Guest | null);
+
+  const placeRelation =
     reservation.places;
+
+  const place: Place | null =
+    Array.isArray(placeRelation)
+      ? (placeRelation[0] as Place | undefined) ?? null
+      : (placeRelation as Place | null);
 
   const payments =
     reservation.payments ?? [];

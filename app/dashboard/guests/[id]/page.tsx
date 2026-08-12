@@ -7,6 +7,10 @@ import {
   saveGuestRestriction,
 } from "./actions";
 
+type Place = {
+  name: string;
+};
+
 export default async function GuestPage({
   params,
 }: {
@@ -66,7 +70,9 @@ export default async function GuestPage({
     .from("guest_notes")
     .select("id, note, created_at")
     .eq("guest_id", id)
-    .order("created_at", { ascending: false });
+    .order("created_at", {
+      ascending: false,
+    });
 
   const { data: guestAlert } = await supabase
     .from("guest_alerts")
@@ -74,92 +80,95 @@ export default async function GuestPage({
     .eq("guest_id", id)
     .maybeSingle();
 
-  const { data: guestRestriction } = await supabase
-    .from("guest_restrictions")
-    .select("id, blocked, reason")
-    .eq("guest_id", id)
-    .maybeSingle();
+  const { data: guestRestriction } =
+    await supabase
+      .from("guest_restrictions")
+      .select("id, blocked, reason")
+      .eq("guest_id", id)
+      .maybeSingle();
 
-  const reservations = guest.reservations ?? [];
+  const reservations =
+    guest.reservations ?? [];
 
-  const totalNights = reservations.reduce((sum, reservation) => {
-    const arrival = new Date(reservation.arrival_date);
-    const departure = new Date(reservation.departure_date);
+  const totalNights =
+    reservations.reduce(
+      (sum, reservation) => {
+        const arrival =
+          new Date(
+            `${reservation.arrival_date}T00:00:00`
+          );
 
-    return (
-      sum +
-      Math.round(
-        (departure.getTime() - arrival.getTime()) /
-          (1000 * 60 * 60 * 24)
-      )
+        const departure =
+          new Date(
+            `${reservation.departure_date}T00:00:00`
+          );
+
+        return (
+          sum +
+          Math.round(
+            (
+              departure.getTime() -
+              arrival.getTime()
+            ) /
+              86400000
+          )
+        );
+      },
+      0
     );
-  }, 0);
 
-  const totalPaid = reservations.reduce((sum, reservation) => {
-    const payments = reservation.payments ?? [];
+  const totalPaid =
+    reservations.reduce(
+      (sum, reservation) => {
+        const payments =
+          reservation.payments ?? [];
 
-    return (
-      sum +
-      payments.reduce(
-        (paymentSum, payment) =>
-          paymentSum + Number(payment.amount || 0),
-        0
-      )
+        return (
+          sum +
+          payments.reduce(
+            (
+              paymentSum,
+              payment
+            ) =>
+              paymentSum +
+              Number(
+                payment.amount || 0
+              ),
+            0
+          )
+        );
+      },
+      0
     );
-  }, 0);
 
   return (
     <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "25px",
-        }}
-      >
+      <div style={topStyle}>
         <div>
-          <h1
-            style={{
-              fontSize: "30px",
-              fontWeight: "800",
-              marginBottom: "5px",
-            }}
-          >
-            {guest.first_name} {guest.last_name}
+          <h1 style={titleStyle}>
+            {guest.first_name}{" "}
+            {guest.last_name}
           </h1>
 
-          <p style={{ color: "#6b7a72" }}>
+          <p style={subtitleStyle}>
             Gjestekort
           </p>
         </div>
 
         <Link
           href="/dashboard/guests"
-          style={{
-            textDecoration: "none",
-            background: "#e7efeb",
-            color: "#1d2a24",
-            padding: "10px 14px",
-            borderRadius: "9px",
-            fontWeight: "700",
-          }}
+          style={backLinkStyle}
         >
           ← Tilbake
         </Link>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-          gap: "15px",
-          marginBottom: "20px",
-        }}
-      >
+      <div style={statsGridStyle}>
         <StatCard
           title="Besøk"
-          value={reservations.length}
+          value={
+            reservations.length
+          }
         />
 
         <StatCard
@@ -169,18 +178,13 @@ export default async function GuestPage({
 
         <StatCard
           title="Totalt betalt"
-          value={`${totalPaid.toLocaleString("nb-NO")} kr`}
+          value={`${totalPaid.toLocaleString(
+            "nb-NO"
+          )} kr`}
         />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "20px",
-          marginBottom: "20px",
-        }}
-      >
+      <div style={twoColumnStyle}>
         <div style={cardStyle}>
           <h2 style={headingStyle}>
             Kontaktinformasjon
@@ -203,7 +207,9 @@ export default async function GuestPage({
 
           <InfoRow
             label="Registreringsnummer"
-            value={guest.vehicle_reg}
+            value={
+              guest.vehicle_reg
+            }
           />
         </div>
 
@@ -213,16 +219,7 @@ export default async function GuestPage({
           </h2>
 
           {guestRestriction?.blocked ? (
-            <div
-              style={{
-                background: "#fde2e2",
-                color: "#8a2424",
-                padding: "12px",
-                borderRadius: "10px",
-                marginBottom: "15px",
-                fontWeight: "700",
-              }}
-            >
+            <div style={blockedStyle}>
               ⚠ SPERRET GJEST
 
               {guestRestriction.reason && (
@@ -232,33 +229,20 @@ export default async function GuestPage({
                     fontWeight: "400",
                   }}
                 >
-                  {guestRestriction.reason}
+                  {
+                    guestRestriction.reason
+                  }
                 </div>
               )}
             </div>
           ) : (
-            <div
-              style={{
-                background: "#dff1e7",
-                color: "#235b3d",
-                padding: "10px",
-                borderRadius: "10px",
-                marginBottom: "15px",
-              }}
-            >
+            <div style={okStyle}>
               Ingen sperre
             </div>
           )}
 
           {guestAlert?.enabled && (
-            <div
-              style={{
-                background: "#fff2c7",
-                color: "#725600",
-                padding: "12px",
-                borderRadius: "10px",
-              }}
-            >
+            <div style={importantStyle}>
               <strong>
                 ★ Viktig beskjed
               </strong>
@@ -275,40 +259,30 @@ export default async function GuestPage({
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "20px",
-          marginBottom: "20px",
-        }}
-      >
+      <div style={twoColumnStyle}>
         <div style={cardStyle}>
           <h2 style={headingStyle}>
             Viktig beskjed
           </h2>
 
-          <form action={saveGuestAlert}>
+          <form
+            action={
+              saveGuestAlert
+            }
+          >
             <input
               type="hidden"
               name="guest_id"
               value={guest.id}
             />
 
-            <label
-              style={{
-                display: "flex",
-                gap: "8px",
-                alignItems: "center",
-                marginBottom: "12px",
-                fontWeight: "700",
-              }}
-            >
+            <label style={checkboxLabelStyle}>
               <input
                 type="checkbox"
                 name="enabled"
                 defaultChecked={
-                  guestAlert?.enabled ?? false
+                  guestAlert?.enabled ??
+                  false
                 }
               />
 
@@ -318,7 +292,8 @@ export default async function GuestPage({
             <textarea
               name="message"
               defaultValue={
-                guestAlert?.message ?? ""
+                guestAlert?.message ??
+                ""
               }
               placeholder="Eksempel: Gjesten trenger tilgang til HC-toalett."
               style={textareaStyle}
@@ -338,27 +313,24 @@ export default async function GuestPage({
             Sperre gjest
           </h2>
 
-          <form action={saveGuestRestriction}>
+          <form
+            action={
+              saveGuestRestriction
+            }
+          >
             <input
               type="hidden"
               name="guest_id"
               value={guest.id}
             />
 
-            <label
-              style={{
-                display: "flex",
-                gap: "8px",
-                alignItems: "center",
-                marginBottom: "12px",
-                fontWeight: "700",
-              }}
-            >
+            <label style={checkboxLabelStyle}>
               <input
                 type="checkbox"
                 name="blocked"
                 defaultChecked={
-                  guestRestriction?.blocked ?? false
+                  guestRestriction?.blocked ??
+                  false
                 }
               />
 
@@ -368,7 +340,8 @@ export default async function GuestPage({
             <textarea
               name="reason"
               defaultValue={
-                guestRestriction?.reason ?? ""
+                guestRestriction?.reason ??
+                ""
               }
               placeholder="Intern årsak, kort og saklig."
               style={textareaStyle}
@@ -416,41 +389,35 @@ export default async function GuestPage({
           </button>
         </form>
 
-        <div style={{ marginTop: "20px" }}>
+        <div
+          style={{
+            marginTop: "20px",
+          }}
+        >
           {guestNotes &&
           guestNotes.length > 0 ? (
-            guestNotes.map((note) => (
-              <div
-                key={note.id}
-                style={{
-                  padding: "12px 0",
-                  borderBottom:
-                    "1px solid #e5ebe8",
-                }}
-              >
-                <div>
-                  {note.note}
-                </div>
-
+            guestNotes.map(
+              (note) => (
                 <div
-                  style={{
-                    marginTop: "4px",
-                    fontSize: "12px",
-                    color: "#6b7a72",
-                  }}
+                  key={note.id}
+                  style={noteStyle}
                 >
-                  {new Date(
-                    note.created_at
-                  ).toLocaleString("nb-NO")}
+                  <div>
+                    {note.note}
+                  </div>
+
+                  <div style={noteDateStyle}>
+                    {new Date(
+                      note.created_at
+                    ).toLocaleString(
+                      "nb-NO"
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            )
           ) : (
-            <p
-              style={{
-                color: "#6b7a72",
-              }}
-            >
+            <p style={mutedStyle}>
               Ingen interne notater.
             </p>
           )}
@@ -462,110 +429,163 @@ export default async function GuestPage({
           Besøkshistorikk
         </h2>
 
-        {reservations.length === 0 ? (
-          <p
-            style={{
-              color: "#6b7a72",
-            }}
-          >
+        {reservations.length ===
+        0 ? (
+          <p style={mutedStyle}>
             Denne gjesten har ingen reservasjoner ennå.
           </p>
         ) : (
-          <table
+          <div
             style={{
-              width: "100%",
-              borderCollapse: "collapse",
+              overflowX: "auto",
             }}
           >
-            <thead>
-              <tr>
-                <th style={headerStyle}>
-                  Booking
-                </th>
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th style={headerStyle}>
+                    Booking
+                  </th>
 
-                <th style={headerStyle}>
-                  Periode
-                </th>
+                  <th style={headerStyle}>
+                    Periode
+                  </th>
 
-                <th style={headerStyle}>
-                  Type
-                </th>
+                  <th style={headerStyle}>
+                    Type
+                  </th>
 
-                <th style={headerStyle}>
-                  Plass
-                </th>
+                  <th style={headerStyle}>
+                    Plass
+                  </th>
 
-                <th style={headerStyle}>
-                  Status
-                </th>
+                  <th style={headerStyle}>
+                    Status
+                  </th>
 
-                <th style={headerStyle}>
-                  Betalt
-                </th>
-              </tr>
-            </thead>
+                  <th style={headerStyle}>
+                    Betalt
+                  </th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {reservations.map(
-                (reservation) => {
-                  const paid =
-                    reservation.payments?.reduce(
-                      (sum, payment) =>
-                        sum +
-                        Number(
-                          payment.amount || 0
-                        ),
-                      0
-                    ) ?? 0;
+              <tbody>
+                {reservations.map(
+                  (reservation) => {
+                    const paid =
+                      reservation.payments?.reduce(
+                        (
+                          sum,
+                          payment
+                        ) =>
+                          sum +
+                          Number(
+                            payment.amount ||
+                              0
+                          ),
+                        0
+                      ) ?? 0;
 
-                  return (
-                    <tr key={reservation.id}>
-                      <td style={cellStyle}>
-                        #
-                        {
-                          reservation.booking_number
+                    const placeRelation =
+                      reservation.places;
+
+                    const place: Place | null =
+                      Array.isArray(
+                        placeRelation
+                      )
+                        ? (
+                            placeRelation[0] as
+                              | Place
+                              | undefined
+                          ) ?? null
+                        : (placeRelation as
+                            | Place
+                            | null);
+
+                    return (
+                      <tr
+                        key={
+                          reservation.id
                         }
-                      </td>
+                      >
+                        <td
+                          style={
+                            cellStyle
+                          }
+                        >
+                          <Link
+                            href={`/dashboard/reservations/${reservation.id}`}
+                            style={
+                              reservationLinkStyle
+                            }
+                          >
+                            #
+                            {
+                              reservation.booking_number
+                            }
+                          </Link>
+                        </td>
 
-                      <td style={cellStyle}>
-                        {
-                          reservation.arrival_date
-                        }{" "}
-                        –{" "}
-                        {
-                          reservation.departure_date
-                        }
-                      </td>
+                        <td
+                          style={
+                            cellStyle
+                          }
+                        >
+                          {
+                            reservation.arrival_date
+                          }{" "}
+                          –{" "}
+                          {
+                            reservation.departure_date
+                          }
+                        </td>
 
-                      <td style={cellStyle}>
-                        {
-                          reservation.stay_type
-                        }
-                      </td>
+                        <td
+                          style={
+                            cellStyle
+                          }
+                        >
+                          {translateType(
+                            reservation.stay_type
+                          )}
+                        </td>
 
-                      <td style={cellStyle}>
-                        {reservation.places
-                          ?.name || "–"}
-                      </td>
+                        <td
+                          style={
+                            cellStyle
+                          }
+                        >
+                          {place?.name ||
+                            "–"}
+                        </td>
 
-                      <td style={cellStyle}>
-                        {
-                          reservation.stay_status
-                        }
-                      </td>
+                        <td
+                          style={
+                            cellStyle
+                          }
+                        >
+                          {
+                            reservation.stay_status
+                          }
+                        </td>
 
-                      <td style={cellStyle}>
-                        {paid.toLocaleString(
-                          "nb-NO"
-                        )}{" "}
-                        kr
-                      </td>
-                    </tr>
-                  );
-                }
-              )}
-            </tbody>
-          </table>
+                        <td
+                          style={
+                            cellStyle
+                          }
+                        >
+                          {paid.toLocaleString(
+                            "nb-NO"
+                          )}{" "}
+                          kr
+                        </td>
+                      </tr>
+                    );
+                  }
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
@@ -581,22 +601,11 @@ function StatCard({
 }) {
   return (
     <div style={cardStyle}>
-      <div
-        style={{
-          color: "#6b7a72",
-          fontSize: "13px",
-        }}
-      >
+      <div style={statLabelStyle}>
         {title}
       </div>
 
-      <div
-        style={{
-          fontSize: "28px",
-          fontWeight: "800",
-          marginTop: "5px",
-        }}
-      >
+      <div style={statValueStyle}>
         {value}
       </div>
     </div>
@@ -611,29 +620,72 @@ function InfoRow({
   value?: string | null;
 }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "160px 1fr",
-        gap: "10px",
-        padding: "10px 0",
-        borderBottom: "1px solid #e5ebe8",
-      }}
-    >
-      <strong
-        style={{
-          color: "#6b7a72",
-        }}
-      >
+    <div style={infoRowStyle}>
+      <strong style={infoLabelStyle}>
         {label}
       </strong>
 
-      <span>
-        {value || "–"}
-      </span>
+      <span>{value || "–"}</span>
     </div>
   );
 }
+
+function translateType(
+  type: string
+) {
+  const map: Record<
+    string,
+    string
+  > = {
+    motorhome: "Bobil",
+    caravan: "Campingvogn",
+    tent: "Telt",
+    cabin: "Hytte",
+  };
+
+  return map[type] ?? type;
+}
+
+const topStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "25px",
+};
+
+const titleStyle = {
+  fontSize: "30px",
+  fontWeight: "800",
+  marginBottom: "5px",
+};
+
+const subtitleStyle = {
+  color: "#6b7a72",
+};
+
+const backLinkStyle = {
+  textDecoration: "none",
+  background: "#e7efeb",
+  color: "#1d2a24",
+  padding: "10px 14px",
+  borderRadius: "9px",
+  fontWeight: "700",
+};
+
+const statsGridStyle = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(3, minmax(0, 1fr))",
+  gap: "15px",
+  marginBottom: "20px",
+};
+
+const twoColumnStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "20px",
+  marginBottom: "20px",
+};
 
 const cardStyle = {
   background: "white",
@@ -648,17 +700,37 @@ const headingStyle = {
   marginBottom: "15px",
 };
 
-const headerStyle = {
-  textAlign: "left" as const,
-  padding: "10px",
-  borderBottom: "1px solid #dbe4df",
-  fontSize: "12px",
+const statLabelStyle = {
+  color: "#6b7a72",
+  fontSize: "13px",
+};
+
+const statValueStyle = {
+  fontSize: "28px",
+  fontWeight: "800",
+  marginTop: "5px",
+};
+
+const infoRowStyle = {
+  display: "grid",
+  gridTemplateColumns:
+    "160px 1fr",
+  gap: "10px",
+  padding: "10px 0",
+  borderBottom:
+    "1px solid #e5ebe8",
+};
+
+const infoLabelStyle = {
   color: "#6b7a72",
 };
 
-const cellStyle = {
-  padding: "12px 10px",
-  borderBottom: "1px solid #e5ebe8",
+const checkboxLabelStyle = {
+  display: "flex",
+  gap: "8px",
+  alignItems: "center",
+  marginBottom: "12px",
+  fontWeight: "700",
 };
 
 const textareaStyle = {
@@ -678,4 +750,72 @@ const greenButtonStyle = {
   fontWeight: "700",
   cursor: "pointer",
   marginTop: "12px",
+};
+
+const blockedStyle = {
+  background: "#fde2e2",
+  color: "#8a2424",
+  padding: "12px",
+  borderRadius: "10px",
+  marginBottom: "15px",
+  fontWeight: "700",
+};
+
+const okStyle = {
+  background: "#dff1e7",
+  color: "#235b3d",
+  padding: "10px",
+  borderRadius: "10px",
+  marginBottom: "15px",
+};
+
+const importantStyle = {
+  background: "#fff2c7",
+  color: "#725600",
+  padding: "12px",
+  borderRadius: "10px",
+};
+
+const noteStyle = {
+  padding: "12px 0",
+  borderBottom:
+    "1px solid #e5ebe8",
+};
+
+const noteDateStyle = {
+  marginTop: "4px",
+  fontSize: "12px",
+  color: "#6b7a72",
+};
+
+const mutedStyle = {
+  color: "#6b7a72",
+};
+
+const reservationLinkStyle = {
+  color: "#2f6f4e",
+  fontWeight: "800",
+  textDecoration: "none",
+};
+
+const tableStyle = {
+  width: "100%",
+  borderCollapse:
+    "collapse" as const,
+};
+
+const headerStyle = {
+  textAlign:
+    "left" as const,
+  padding: "10px",
+  borderBottom:
+    "1px solid #dbe4df",
+  fontSize: "12px",
+  color: "#6b7a72",
+};
+
+const cellStyle = {
+  padding: "12px 10px",
+  borderBottom:
+    "1px solid #e5ebe8",
 };

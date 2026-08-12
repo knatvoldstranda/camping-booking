@@ -3,6 +3,28 @@ import { createClient } from "@/lib/supabase/server";
 
 export const instant = false;
 
+type Guest = {
+  first_name: string;
+  last_name: string;
+};
+
+type Place = {
+  id: string;
+  name: string;
+  place_type: string;
+};
+
+type PaymentReservation = {
+  id: string;
+  booking_number:
+    | string
+    | number;
+  guests:
+    | Guest
+    | Guest[]
+    | null;
+};
+
 export default async function MonthlyOverviewPage({
   searchParams,
 }: {
@@ -10,10 +32,13 @@ export default async function MonthlyOverviewPage({
     month?: string;
   }>;
 }) {
-  const params = await searchParams;
+  const params =
+    await searchParams;
 
   const selectedMonth =
-    isValidMonth(params.month)
+    isValidMonth(
+      params.month
+    )
       ? params.month!
       : currentMonthString();
 
@@ -51,10 +76,6 @@ export default async function MonthlyOverviewPage({
 
   const supabase =
     await createClient();
-
-  // --------------------------------------------------
-  // RESERVASJONER SOM HAR MINST ÉN NATT I VALGT MÅNED
-  // --------------------------------------------------
 
   const {
     data: reservations,
@@ -102,10 +123,6 @@ export default async function MonthlyOverviewPage({
         ascending: true,
       }
     );
-
-  // --------------------------------------------------
-  // BETALINGER SOM FAKTISK BLE MOTTATT I VALGT MÅNED
-  // --------------------------------------------------
 
   const {
     data: payments,
@@ -167,11 +184,6 @@ export default async function MonthlyOverviewPage({
   const paymentList =
     payments ?? [];
 
-  // --------------------------------------------------
-  // OVERNATTINGER
-  // Kun nettene som faktisk ligger i valgt måned telles.
-  // --------------------------------------------------
-
   const totalNights =
     list.reduce(
       (
@@ -188,11 +200,6 @@ export default async function MonthlyOverviewPage({
       0
     );
 
-  // --------------------------------------------------
-  // PERSONER
-  // Summen av personer på reservasjoner som har opphold i måneden.
-  // --------------------------------------------------
-
   const totalPeople =
     list.reduce(
       (
@@ -208,10 +215,6 @@ export default async function MonthlyOverviewPage({
         ),
       0
     );
-
-  // --------------------------------------------------
-  // RESERVASJONSTYPER
-  // --------------------------------------------------
 
   const motorhomeCount =
     list.filter(
@@ -240,10 +243,6 @@ export default async function MonthlyOverviewPage({
         reservation.stay_type ===
         "cabin"
     ).length;
-
-  // --------------------------------------------------
-  // BETALING
-  // --------------------------------------------------
 
   const totalPaid =
     paymentList.reduce(
@@ -294,7 +293,9 @@ export default async function MonthlyOverviewPage({
 
         <Link
           href="/dashboard/reservations"
-          style={secondaryButtonStyle}
+          style={
+            secondaryButtonStyle
+          }
         >
           ← Reservasjoner
         </Link>
@@ -303,7 +304,9 @@ export default async function MonthlyOverviewPage({
       <div style={monthToolbarStyle}>
         <Link
           href={`/dashboard/reservations/monthly?month=${previousMonth}`}
-          style={secondaryButtonStyle}
+          style={
+            secondaryButtonStyle
+          }
         >
           ← Forrige måned
         </Link>
@@ -334,7 +337,9 @@ export default async function MonthlyOverviewPage({
 
         <Link
           href={`/dashboard/reservations/monthly?month=${nextMonth}`}
-          style={secondaryButtonStyle}
+          style={
+            secondaryButtonStyle
+          }
         >
           Neste måned →
         </Link>
@@ -393,8 +398,7 @@ export default async function MonthlyOverviewPage({
       <div
         style={{
           ...cardStyle,
-          marginBottom:
-            "20px",
+          marginBottom: "20px",
         }}
       >
         <div style={sectionTopStyle}>
@@ -462,9 +466,7 @@ export default async function MonthlyOverviewPage({
 
               <tbody>
                 {list.map(
-                  (
-                    reservation
-                  ) => {
+                  (reservation) => {
                     const nights =
                       nightsInsideMonth(
                         reservation.arrival_date,
@@ -483,57 +485,42 @@ export default async function MonthlyOverviewPage({
                           0
                       );
 
+                    const place =
+                      getPlace(
+                        reservation.places
+                      );
+
                     return (
                       <tr
                         key={
                           reservation.id
                         }
                       >
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           #
                           {
                             reservation.booking_number
                           }
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {guestName(
                             reservation
                           )}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {translateType(
                             reservation.stay_type
                           )}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
-                          {reservation.places
-                            ?.name || "–"}
+                        <td style={cellStyle}>
+                          {place?.name ||
+                            "–"}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {formatDate(
                             reservation.arrival_date
                           )}{" "}
@@ -553,19 +540,11 @@ export default async function MonthlyOverviewPage({
                           {nights}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {people}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           <Link
                             href={`/dashboard/reservations/${reservation.id}`}
                             style={
@@ -597,13 +576,7 @@ export default async function MonthlyOverviewPage({
             </p>
           </div>
 
-          <div
-            style={{
-              fontSize: "22px",
-              fontWeight: "800",
-              color: "#235b3d",
-            }}
-          >
+          <div style={paidTotalStyle}>
             {totalPaid.toLocaleString(
               "nb-NO"
             )}{" "}
@@ -655,7 +628,9 @@ export default async function MonthlyOverviewPage({
                 {paymentList.map(
                   (payment) => {
                     const reservation =
-                      payment.reservations;
+                      getPaymentReservation(
+                        payment.reservations
+                      );
 
                     return (
                       <tr
@@ -663,44 +638,27 @@ export default async function MonthlyOverviewPage({
                           payment.id
                         }
                       >
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {formatDate(
                             payment.payment_date
                           )}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           #
-                          {reservation
-                            ?.booking_number ||
+                          {reservation?.booking_number ??
                             "–"}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {reservation
-                            ? guestName(
+                            ? paymentGuestName(
                                 reservation
                               )
                             : "–"}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {translatePaymentMethod(
                             payment.payment_method
                           )}
@@ -723,11 +681,7 @@ export default async function MonthlyOverviewPage({
                           kr
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {reservation?.id ? (
                             <Link
                               href={`/dashboard/reservations/${reservation.id}`}
@@ -752,6 +706,60 @@ export default async function MonthlyOverviewPage({
       </div>
     </div>
   );
+}
+
+function getGuest(
+  relation: unknown
+): Guest | null {
+  if (
+    Array.isArray(relation)
+  ) {
+    return (
+      (relation[0] as
+        | Guest
+        | undefined) ?? null
+    );
+  }
+
+  return relation
+    ? (relation as Guest)
+    : null;
+}
+
+function getPlace(
+  relation: unknown
+): Place | null {
+  if (
+    Array.isArray(relation)
+  ) {
+    return (
+      (relation[0] as
+        | Place
+        | undefined) ?? null
+    );
+  }
+
+  return relation
+    ? (relation as Place)
+    : null;
+}
+
+function getPaymentReservation(
+  relation: unknown
+): PaymentReservation | null {
+  if (
+    Array.isArray(relation)
+  ) {
+    return (
+      (relation[0] as
+        | PaymentReservation
+        | undefined) ?? null
+    );
+  }
+
+  return relation
+    ? (relation as PaymentReservation)
+    : null;
 }
 
 function StatCard({
@@ -854,7 +862,24 @@ function guestName(
   reservation: any
 ) {
   const guest =
-    reservation.guests;
+    getGuest(
+      reservation.guests
+    );
+
+  if (!guest) {
+    return "Ukjent gjest";
+  }
+
+  return `${guest.first_name} ${guest.last_name}`;
+}
+
+function paymentGuestName(
+  reservation: PaymentReservation
+) {
+  const guest =
+    getGuest(
+      reservation.guests
+    );
 
   if (!guest) {
     return "Ukjent gjest";
@@ -899,10 +924,7 @@ function translatePaymentMethod(
     other: "Annet",
   };
 
-  return (
-    map[method] ??
-    method
-  );
+  return map[method] ?? method;
 }
 
 function formatDate(
@@ -947,7 +969,10 @@ function changeMonth(
   month: string,
   amount: number
 ) {
-  const [year, monthNumber] =
+  const [
+    year,
+    monthNumber,
+  ] =
     month
       .split("-")
       .map(Number);
@@ -955,7 +980,9 @@ function changeMonth(
   const date =
     new Date(
       year,
-      monthNumber - 1 + amount,
+      monthNumber -
+        1 +
+        amount,
       1
     );
 
@@ -979,11 +1006,9 @@ const topStyle = {
   display: "flex",
   justifyContent:
     "space-between",
-  alignItems:
-    "center",
+  alignItems: "center",
   gap: "20px",
-  marginBottom:
-    "25px",
+  marginBottom: "25px",
 };
 
 const titleStyle = {
@@ -1131,6 +1156,12 @@ const openButtonStyle = {
   textDecoration: "none",
   fontWeight: "700",
   fontSize: "12px",
+};
+
+const paidTotalStyle = {
+  fontSize: "22px",
+  fontWeight: "800",
+  color: "#235b3d",
 };
 
 const tableStyle = {

@@ -1,6 +1,20 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
+type Guest = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  email: string | null;
+};
+
+type Place = {
+  id: string;
+  code: string;
+  name: string;
+};
+
 export default async function ReservationsPage() {
   const supabase = await createClient();
 
@@ -207,11 +221,37 @@ export default async function ReservationsPage() {
                   (
                     reservation
                   ) => {
-                    const guest =
+                    const guestRelation =
                       reservation.guests;
 
-                    const place =
+                    const guest: Guest | null =
+                      Array.isArray(
+                        guestRelation
+                      )
+                        ? (
+                            guestRelation[0] as
+                              | Guest
+                              | undefined
+                          ) ?? null
+                        : (guestRelation as
+                            | Guest
+                            | null);
+
+                    const placeRelation =
                       reservation.places;
+
+                    const place: Place | null =
+                      Array.isArray(
+                        placeRelation
+                      )
+                        ? (
+                            placeRelation[0] as
+                              | Place
+                              | undefined
+                          ) ?? null
+                        : (placeRelation as
+                            | Place
+                            | null);
 
                     const people =
                       Number(

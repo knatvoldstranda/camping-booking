@@ -4,6 +4,11 @@ import EditReservationForm from "./form";
 
 export const instant = false;
 
+type Guest = {
+  first_name: string;
+  last_name: string;
+};
+
 export default async function EditReservationPage({
   params,
   searchParams,
@@ -83,7 +88,12 @@ export default async function EditReservationPage({
     );
   }
 
-  const guest = reservation.guests;
+  const guestRelation = reservation.guests;
+
+  const guest: Guest | null =
+    Array.isArray(guestRelation)
+      ? (guestRelation[0] as Guest | undefined) ?? null
+      : (guestRelation as Guest | null);
 
   return (
     <div>

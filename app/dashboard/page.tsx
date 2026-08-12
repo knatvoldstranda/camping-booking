@@ -3,18 +3,38 @@ import { createClient } from "@/lib/supabase/server";
 
 export const instant = false;
 
+type Guest = {
+  id?: string;
+  first_name: string;
+  last_name: string;
+};
+
+type Place = {
+  id: string;
+  name: string;
+  place_type?: string;
+};
+
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
-  const today = formatIsoDate(new Date());
+  const today =
+    formatIsoDate(
+      new Date()
+    );
 
-  const tomorrowDate = new Date();
+  const tomorrowDate =
+    new Date();
+
   tomorrowDate.setDate(
     tomorrowDate.getDate() + 1
   );
 
   const tomorrow =
-    formatIsoDate(tomorrowDate);
+    formatIsoDate(
+      tomorrowDate
+    );
 
   const {
     data: reservations,
@@ -85,7 +105,8 @@ export default async function DashboardPage() {
 
       places (
         id,
-        name
+        name,
+        place_type
       ),
 
       payments (
@@ -107,10 +128,7 @@ export default async function DashboardPage() {
       name,
       place_type
     `)
-    .eq(
-      "active",
-      true
-    );
+    .eq("active", true);
 
   if (
     reservationError ||
@@ -133,14 +151,11 @@ export default async function DashboardPage() {
     reservations ?? [];
 
   const allReservations =
-    allActiveReservations ?? [];
+    allActiveReservations ??
+    [];
 
   const places =
     activePlaces ?? [];
-
-  // --------------------------------------------------
-  // DAGENS ANKOMSTER
-  // --------------------------------------------------
 
   const arrivalsToday =
     list
@@ -150,14 +165,12 @@ export default async function DashboardPage() {
           today
       )
       .sort((a, b) =>
-        guestName(a).localeCompare(
+        guestName(
+          a
+        ).localeCompare(
           guestName(b)
         )
       );
-
-  // --------------------------------------------------
-  // DAGENS AVGANGER
-  // --------------------------------------------------
 
   const departuresToday =
     list
@@ -167,14 +180,12 @@ export default async function DashboardPage() {
           today
       )
       .sort((a, b) =>
-        guestName(a).localeCompare(
+        guestName(
+          a
+        ).localeCompare(
           guestName(b)
         )
       );
-
-  // --------------------------------------------------
-  // INNSJEKKET
-  // --------------------------------------------------
 
   const checkedIn =
     allReservations.filter(
@@ -182,12 +193,6 @@ export default async function DashboardPage() {
         reservation.stay_status ===
         "checked_in"
     );
-
-  // --------------------------------------------------
-  // GJESTER SOM BOR HER I DAG
-  // Ankomst teller med.
-  // Avreisedagen teller ikke som overnatting.
-  // --------------------------------------------------
 
   const stayingToday =
     allReservations.filter(
@@ -200,27 +205,32 @@ export default async function DashboardPage() {
 
   const peopleToday =
     stayingToday.reduce(
-      (sum, reservation) =>
+      (
+        sum,
+        reservation
+      ) =>
         sum +
         Number(
-          reservation.adults || 0
+          reservation.adults ||
+            0
         ) +
         Number(
-          reservation.children || 0
+          reservation.children ||
+            0
         ),
       0
     );
-
-  // --------------------------------------------------
-  // BELEGG
-  // --------------------------------------------------
 
   const occupiedPlaceIds =
     new Set(
       stayingToday
         .map(
-          (reservation) =>
-            reservation.places?.id
+          (
+            reservation
+          ) =>
+            getPlace(
+              reservation.places
+            )?.id
         )
         .filter(Boolean)
     );
@@ -234,60 +244,60 @@ export default async function DashboardPage() {
   const occupancyPercent =
     totalPlaces > 0
       ? Math.round(
-          (occupiedPlaces /
-            totalPlaces) *
+          (
+            occupiedPlaces /
+            totalPlaces
+          ) *
             100
         )
       : 0;
 
-  // --------------------------------------------------
-  // UBETALTE / DELVIS BETALTE
-  // --------------------------------------------------
-
   const unpaidReservations =
     allReservations
-      .map((reservation) => {
-        const nights =
-          calculateNights(
-            reservation.arrival_date,
-            reservation.departure_date
-          );
+      .map(
+        (reservation) => {
+          const nights =
+            calculateNights(
+              reservation.arrival_date,
+              reservation.departure_date
+            );
 
-        const total =
-          nights *
-          Number(
-            reservation.price_per_night ||
-              0
-          );
+          const total =
+            nights *
+            Number(
+              reservation.price_per_night ||
+                0
+            );
 
-        const paid =
-          (
-            reservation.payments ??
-            []
-          ).reduce(
+          const paid =
             (
-              sum,
-              payment
-            ) =>
-              sum +
-              Number(
-                payment.amount ||
-                  0
-              ),
-            0
-          );
+              reservation.payments ??
+              []
+            ).reduce(
+              (
+                sum,
+                payment
+              ) =>
+                sum +
+                Number(
+                  payment.amount ||
+                    0
+                ),
+              0
+            );
 
-        return {
-          ...reservation,
-          total,
-          paid,
-          remaining:
-            Math.max(
-              0,
-              total - paid
-            ),
-        };
-      })
+          return {
+            ...reservation,
+            total,
+            paid,
+            remaining:
+              Math.max(
+                0,
+                total - paid
+              ),
+          };
+        }
+      )
       .filter(
         (reservation) =>
           reservation.remaining >
@@ -301,7 +311,10 @@ export default async function DashboardPage() {
 
   const totalOutstanding =
     unpaidReservations.reduce(
-      (sum, reservation) =>
+      (
+        sum,
+        reservation
+      ) =>
         sum +
         reservation.remaining,
       0
@@ -331,16 +344,12 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            flexWrap: "wrap",
-          }}
-        >
+        <div style={topButtonsStyle}>
           <Link
             href="/dashboard/calendar"
-            style={secondaryButtonStyle}
+            style={
+              secondaryButtonStyle
+            }
           >
             Åpne kalender
           </Link>
@@ -348,7 +357,9 @@ export default async function DashboardPage() {
           <Link
             href="/dashboard/reservations/new"
             prefetch={false}
-            style={primaryButtonStyle}
+            style={
+              primaryButtonStyle
+            }
           >
             + Ny reservasjon
           </Link>
@@ -374,9 +385,7 @@ export default async function DashboardPage() {
 
         <StatCard
           title="Gjester på plassen"
-          value={
-            peopleToday
-          }
+          value={peopleToday}
           subtitle={`${occupiedPlaces} plasser i bruk`}
         />
 
@@ -459,18 +468,11 @@ export default async function DashboardPage() {
         >
           <div
             style={{
-              marginBottom: "18px",
+              marginBottom:
+                "18px",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent:
-                  "space-between",
-                marginBottom: "7px",
-                fontSize: "13px",
-              }}
-            >
+            <div style={occupancyTopStyle}>
               <span>
                 {occupiedPlaces} av{" "}
                 {totalPlaces} plasser
@@ -481,16 +483,7 @@ export default async function DashboardPage() {
               </strong>
             </div>
 
-            <div
-              style={{
-                height: "12px",
-                background:
-                  "#e7efeb",
-                borderRadius:
-                  "999px",
-                overflow: "hidden",
-              }}
-            >
+            <div style={progressBackgroundStyle}>
               <div
                 style={{
                   width: `${Math.min(
@@ -505,14 +498,7 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(3, 1fr)",
-              gap: "10px",
-            }}
-          >
+          <div style={smallStatsGridStyle}>
             <SmallStat
               label="Bobil / vogn"
               value={countOccupiedByType(
@@ -557,13 +543,7 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <div
-            style={{
-              fontSize: "20px",
-              fontWeight: "800",
-              color: "#812d2d",
-            }}
-          >
+          <div style={outstandingStyle}>
             {totalOutstanding.toLocaleString(
               "nb-NO"
             )}{" "}
@@ -619,38 +599,28 @@ export default async function DashboardPage() {
                 {unpaidReservations
                   .slice(0, 10)
                   .map(
-                    (reservation) => (
+                    (
+                      reservation
+                    ) => (
                       <tr
                         key={
                           reservation.id
                         }
                       >
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           #
                           {
                             reservation.booking_number
                           }
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {guestName(
                             reservation
                           )}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {formatDate(
                             reservation.arrival_date
                           )}{" "}
@@ -660,22 +630,14 @@ export default async function DashboardPage() {
                           )}
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {reservation.total.toLocaleString(
                             "nb-NO"
                           )}{" "}
                           kr
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           {reservation.paid.toLocaleString(
                             "nb-NO"
                           )}{" "}
@@ -697,11 +659,7 @@ export default async function DashboardPage() {
                           kr
                         </td>
 
-                        <td
-                          style={
-                            cellStyle
-                          }
-                        >
+                        <td style={cellStyle}>
                           <Link
                             href={`/dashboard/reservations/${reservation.id}`}
                             style={
@@ -716,22 +674,6 @@ export default async function DashboardPage() {
                   )}
               </tbody>
             </table>
-          </div>
-        )}
-
-        {unpaidReservations.length >
-          10 && (
-          <div
-            style={{
-              marginTop: "15px",
-            }}
-          >
-            <Link
-              href="/dashboard/reservations"
-              style={textLinkStyle}
-            >
-              Se alle reservasjoner →
-            </Link>
           </div>
         )}
       </div>
@@ -792,91 +734,84 @@ function ReservationList({
       {reservations
         .slice(0, 8)
         .map(
-          (reservation) => (
-            <Link
-              key={reservation.id}
-              href={`/dashboard/reservations/${reservation.id}`}
-              style={reservationRowStyle}
-            >
-              <div>
-                <div
-                  style={{
-                    fontWeight:
-                      "800",
-                  }}
-                >
-                  {guestName(
-                    reservation
-                  )}
-                </div>
+          (reservation) => {
+            const place =
+              getPlace(
+                reservation.places
+              );
 
-                <div
-                  style={{
-                    color:
-                      "#6b7a72",
-                    fontSize:
-                      "12px",
-                    marginTop:
-                      "3px",
-                  }}
-                >
-                  {reservation.places
-                    ?.name || "–"}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  textAlign:
-                    "right",
-                }}
+            return (
+              <Link
+                key={
+                  reservation.id
+                }
+                href={`/dashboard/reservations/${reservation.id}`}
+                style={
+                  reservationRowStyle
+                }
               >
-                <div
-                  style={{
-                    fontWeight:
-                      "700",
-                  }}
-                >
-                  {show ===
-                    "arrival" &&
-                    "Ankomst i dag"}
+                <div>
+                  <div
+                    style={{
+                      fontWeight:
+                        "800",
+                    }}
+                  >
+                    {guestName(
+                      reservation
+                    )}
+                  </div>
 
-                  {show ===
-                    "departure" &&
-                    "Avreise i dag"}
-
-                  {show ===
-                    "stay" &&
-                    `${formatDate(
-                      reservation.arrival_date
-                    )} – ${formatDate(
-                      reservation.departure_date
-                    )}`}
+                  <div style={rowSubStyle}>
+                    {place?.name ||
+                      "–"}
+                  </div>
                 </div>
 
                 <div
                   style={{
-                    color:
-                      "#6b7a72",
-                    fontSize:
-                      "12px",
-                    marginTop:
-                      "3px",
+                    textAlign:
+                      "right",
                   }}
                 >
-                  {Number(
-                    reservation.adults ||
-                      0
-                  ) +
-                    Number(
-                      reservation.children ||
+                  <div
+                    style={{
+                      fontWeight:
+                        "700",
+                    }}
+                  >
+                    {show ===
+                      "arrival" &&
+                      "Ankomst i dag"}
+
+                    {show ===
+                      "departure" &&
+                      "Avreise i dag"}
+
+                    {show ===
+                      "stay" &&
+                      `${formatDate(
+                        reservation.arrival_date
+                      )} – ${formatDate(
+                        reservation.departure_date
+                      )}`}
+                  </div>
+
+                  <div style={rowSubStyle}>
+                    {Number(
+                      reservation.adults ||
                         0
-                    )}{" "}
-                  personer
+                    ) +
+                      Number(
+                        reservation.children ||
+                          0
+                      )}{" "}
+                    personer
+                  </div>
                 </div>
-              </div>
-            </Link>
-          )
+              </Link>
+            );
+          }
         )}
     </div>
   );
@@ -916,41 +851,52 @@ function SmallStat({
   value: number;
 }) {
   return (
-    <div
-      style={{
-        background:
-          "#f7faf8",
-        borderRadius:
-          "10px",
-        padding:
-          "12px",
-      }}
-    >
-      <div
-        style={{
-          color:
-            "#6b7a72",
-          fontSize:
-            "11px",
-        }}
-      >
+    <div style={smallStatStyle}>
+      <div style={smallStatLabelStyle}>
         {label}
       </div>
 
-      <div
-        style={{
-          fontSize:
-            "22px",
-          fontWeight:
-            "800",
-          marginTop:
-            "3px",
-        }}
-      >
+      <div style={smallStatValueStyle}>
         {value}
       </div>
     </div>
   );
+}
+
+function getGuest(
+  relation: unknown
+): Guest | null {
+  if (
+    Array.isArray(relation)
+  ) {
+    return (
+      (relation[0] as
+        | Guest
+        | undefined) ?? null
+    );
+  }
+
+  return relation
+    ? (relation as Guest)
+    : null;
+}
+
+function getPlace(
+  relation: unknown
+): Place | null {
+  if (
+    Array.isArray(relation)
+  ) {
+    return (
+      (relation[0] as
+        | Place
+        | undefined) ?? null
+    );
+  }
+
+  return relation
+    ? (relation as Place)
+    : null;
 }
 
 function countOccupiedByType(
@@ -961,13 +907,15 @@ function countOccupiedByType(
     reservations
       .filter(
         (reservation) =>
-          reservation.places
-            ?.place_type ===
-          type
+          getPlace(
+            reservation.places
+          )?.place_type === type
       )
       .map(
         (reservation) =>
-          reservation.places?.id
+          getPlace(
+            reservation.places
+          )?.id
       )
       .filter(Boolean)
   ).size;
@@ -977,7 +925,9 @@ function guestName(
   reservation: any
 ) {
   const guest =
-    reservation.guests;
+    getGuest(
+      reservation.guests
+    );
 
   if (!guest) {
     return "Ukjent gjest";
@@ -1036,215 +986,196 @@ const topStyle = {
   display: "flex",
   justifyContent:
     "space-between",
-  alignItems:
-    "center",
+  alignItems: "center",
   gap: "20px",
-  marginBottom:
-    "25px",
+  marginBottom: "25px",
+};
+
+const topButtonsStyle = {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap" as const,
 };
 
 const titleStyle = {
-  fontSize:
-    "30px",
-  fontWeight:
-    "800",
-  marginBottom:
-    "5px",
+  fontSize: "30px",
+  fontWeight: "800",
+  marginBottom: "5px",
 };
 
 const subtitleStyle = {
-  color:
-    "#6b7a72",
+  color: "#6b7a72",
   textTransform:
     "capitalize" as const,
 };
 
 const statsGridStyle = {
-  display:
-    "grid",
+  display: "grid",
   gridTemplateColumns:
     "repeat(3, minmax(0, 1fr))",
-  gap:
-    "15px",
-  marginBottom:
-    "20px",
+  gap: "15px",
+  marginBottom: "20px",
 };
 
 const twoColumnStyle = {
-  display:
-    "grid",
+  display: "grid",
   gridTemplateColumns:
     "1fr 1fr",
-  gap:
-    "20px",
-  marginBottom:
-    "20px",
+  gap: "20px",
+  marginBottom: "20px",
 };
 
 const cardStyle = {
-  background:
-    "white",
+  background: "white",
   border:
     "1px solid #dbe4df",
-  borderRadius:
-    "14px",
-  padding:
-    "18px",
+  borderRadius: "14px",
+  padding: "18px",
 };
 
 const statTitleStyle = {
-  color:
-    "#6b7a72",
-  fontSize:
-    "13px",
+  color: "#6b7a72",
+  fontSize: "13px",
 };
 
 const statValueStyle = {
-  fontSize:
-    "30px",
-  fontWeight:
-    "800",
-  marginTop:
-    "5px",
+  fontSize: "30px",
+  fontWeight: "800",
+  marginTop: "5px",
 };
 
 const statSubtitleStyle = {
-  color:
-    "#6b7a72",
-  fontSize:
-    "12px",
-  marginTop:
-    "3px",
+  color: "#6b7a72",
+  fontSize: "12px",
+  marginTop: "3px",
 };
 
 const sectionTopStyle = {
-  display:
-    "flex",
+  display: "flex",
   justifyContent:
     "space-between",
-  alignItems:
-    "center",
-  gap:
-    "15px",
-  marginBottom:
-    "15px",
+  alignItems: "center",
+  gap: "15px",
+  marginBottom: "15px",
 };
 
 const sectionTitleStyle = {
-  fontSize:
-    "19px",
-  fontWeight:
-    "800",
+  fontSize: "19px",
+  fontWeight: "800",
 };
 
 const sectionSubtitleStyle = {
-  color:
-    "#6b7a72",
-  fontSize:
-    "12px",
-  marginTop:
-    "3px",
+  color: "#6b7a72",
+  fontSize: "12px",
+  marginTop: "3px",
 };
 
 const countBadgeStyle = {
-  minWidth:
-    "28px",
-  height:
-    "28px",
-  display:
-    "inline-grid",
-  placeItems:
-    "center",
-  borderRadius:
-    "999px",
-  background:
-    "#e7efeb",
-  color:
-    "#315944",
-  fontWeight:
-    "800",
-  fontSize:
-    "12px",
+  minWidth: "28px",
+  height: "28px",
+  display: "inline-grid",
+  placeItems: "center",
+  borderRadius: "999px",
+  background: "#e7efeb",
+  color: "#315944",
+  fontWeight: "800",
+  fontSize: "12px",
 };
 
 const reservationRowStyle = {
-  display:
-    "flex",
+  display: "flex",
   justifyContent:
     "space-between",
-  alignItems:
-    "center",
-  gap:
-    "15px",
-  padding:
-    "12px 0",
+  alignItems: "center",
+  gap: "15px",
+  padding: "12px 0",
   borderBottom:
     "1px solid #e5ebe8",
-  color:
-    "#1d2a24",
-  textDecoration:
-    "none",
+  color: "#1d2a24",
+  textDecoration: "none",
+};
+
+const rowSubStyle = {
+  color: "#6b7a72",
+  fontSize: "12px",
+  marginTop: "3px",
+};
+
+const occupancyTopStyle = {
+  display: "flex",
+  justifyContent:
+    "space-between",
+  marginBottom: "7px",
+  fontSize: "13px",
+};
+
+const progressBackgroundStyle = {
+  height: "12px",
+  background: "#e7efeb",
+  borderRadius: "999px",
+  overflow: "hidden",
+};
+
+const smallStatsGridStyle = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(3, 1fr)",
+  gap: "10px",
+};
+
+const smallStatStyle = {
+  background: "#f7faf8",
+  borderRadius: "10px",
+  padding: "12px",
+};
+
+const smallStatLabelStyle = {
+  color: "#6b7a72",
+  fontSize: "11px",
+};
+
+const smallStatValueStyle = {
+  fontSize: "22px",
+  fontWeight: "800",
+  marginTop: "3px",
+};
+
+const outstandingStyle = {
+  fontSize: "20px",
+  fontWeight: "800",
+  color: "#812d2d",
 };
 
 const primaryButtonStyle = {
-  background:
-    "#2f6f4e",
-  color:
-    "white",
-  padding:
-    "11px 15px",
-  borderRadius:
-    "9px",
-  textDecoration:
-    "none",
-  fontWeight:
-    "700",
+  background: "#2f6f4e",
+  color: "white",
+  padding: "11px 15px",
+  borderRadius: "9px",
+  textDecoration: "none",
+  fontWeight: "700",
 };
 
 const secondaryButtonStyle = {
-  background:
-    "#e7efeb",
-  color:
-    "#1d2a24",
-  padding:
-    "11px 15px",
-  borderRadius:
-    "9px",
-  textDecoration:
-    "none",
-  fontWeight:
-    "700",
+  background: "#e7efeb",
+  color: "#1d2a24",
+  padding: "11px 15px",
+  borderRadius: "9px",
+  textDecoration: "none",
+  fontWeight: "700",
 };
 
 const openButtonStyle = {
-  background:
-    "#e7efeb",
-  color:
-    "#1d2a24",
-  padding:
-    "7px 10px",
-  borderRadius:
-    "8px",
-  textDecoration:
-    "none",
-  fontWeight:
-    "700",
-  fontSize:
-    "12px",
-};
-
-const textLinkStyle = {
-  color:
-    "#2f6f4e",
-  fontWeight:
-    "700",
-  textDecoration:
-    "none",
+  background: "#e7efeb",
+  color: "#1d2a24",
+  padding: "7px 10px",
+  borderRadius: "8px",
+  textDecoration: "none",
+  fontWeight: "700",
+  fontSize: "12px",
 };
 
 const tableStyle = {
-  width:
-    "100%",
+  width: "100%",
   borderCollapse:
     "collapse" as const,
 };
@@ -1252,39 +1183,28 @@ const tableStyle = {
 const headerStyle = {
   textAlign:
     "left" as const,
-  padding:
-    "10px",
+  padding: "10px",
   borderBottom:
     "1px solid #dbe4df",
-  fontSize:
-    "12px",
-  color:
-    "#6b7a72",
+  fontSize: "12px",
+  color: "#6b7a72",
 };
 
 const cellStyle = {
-  padding:
-    "12px 10px",
+  padding: "12px 10px",
   borderBottom:
     "1px solid #e5ebe8",
 };
 
 const emptyStyle = {
-  padding:
-    "20px 0",
-  color:
-    "#6b7a72",
+  padding: "20px 0",
+  color: "#6b7a72",
 };
 
 const errorStyle = {
-  marginTop:
-    "20px",
-  padding:
-    "15px",
-  background:
-    "#f8dddd",
-  color:
-    "#812d2d",
-  borderRadius:
-    "10px",
+  marginTop: "20px",
+  padding: "15px",
+  background: "#f8dddd",
+  color: "#812d2d",
+  borderRadius: "10px",
 };
