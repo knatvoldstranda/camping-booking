@@ -81,220 +81,218 @@ export default async function DashboardLayout({
   const roleLabel =
     translateRole(role);
 
+  const displayName =
+    profile.full_name ||
+    profile.email ||
+    "Ansatt";
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns:
-          "250px minmax(0, 1fr)",
-        minHeight: "100vh",
-        background: "#f4f7f5",
-      }}
-    >
-      <aside
-        style={{
-          background: "#18382a",
-          color: "white",
-          padding: "24px 16px",
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-        }}
-      >
+    <div className="min-h-screen bg-[#f4f7f5]">
+      {/* DESKTOPMENY */}
+
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[250px] flex-col bg-[#18382a] px-4 py-6 text-white lg:flex">
         <div>
-          <h2
-            style={{
-              margin: 0,
-              marginBottom: "5px",
-              fontSize: "21px",
-              fontWeight: "800",
-            }}
-          >
+          <h2 className="m-0 text-[21px] font-extrabold">
             Camping Booking
           </h2>
 
-          <div
-            style={{
-              fontSize: "11px",
-              color:
-                "rgba(255,255,255,.6)",
-              marginBottom: "28px",
-            }}
-          >
+          <div className="mb-7 mt-1 text-[11px] text-white/60">
             Reservasjonssystem
           </div>
 
-          <nav
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "9px",
-            }}
-          >
-            <Link
-              style={linkStyle}
-              href="/dashboard"
-            >
-              Dashboard
-            </Link>
-
-            <Link
-              style={linkStyle}
-              href="/dashboard/calendar"
-            >
-              Kalender
-            </Link>
-
-            <Link
-              style={linkStyle}
-              href="/dashboard/reservations"
-            >
-              Reservasjoner
-            </Link>
-
-            <Link
-              style={linkStyle}
-              href="/dashboard/guests"
-            >
-              Gjester
-            </Link>
-
-            <Link
-              style={linkStyle}
-              href="/dashboard/places"
-            >
-              Plasser
-            </Link>
-
-            {isAdmin && (
-              <>
-                <div
-                  style={{
-                    height: "1px",
-                    background:
-                      "rgba(255,255,255,.14)",
-                    margin:
-                      "12px 0 4px",
-                  }}
-                />
-
-                <div
-                  style={{
-                    fontSize: "10px",
-                    textTransform:
-                      "uppercase",
-                    letterSpacing:
-                      ".08em",
-                    color:
-                      "rgba(255,255,255,.55)",
-                    padding:
-                      "0 12px",
-                  }}
-                >
-                  Administrasjon
-                </div>
-
-                <Link
-                  style={linkStyle}
-                  href="/dashboard/staff"
-                >
-                  Ansatte
-                </Link>
-              </>
-            )}
-          </nav>
+          <Navigation
+            isAdmin={isAdmin}
+          />
         </div>
 
-        <div
-          style={{
-            marginTop: "auto",
-            paddingTop: "30px",
-          }}
-        >
-          <div
-            style={{
-              borderTop:
-                "1px solid rgba(255,255,255,.15)",
-              paddingTop: "16px",
-            }}
-          >
-            <div
-              style={{
-                fontWeight: "800",
-                fontSize: "13px",
-              }}
-            >
-              {profile.full_name ||
-                profile.email ||
-                "Ansatt"}
-            </div>
+        <div className="mt-auto pt-8">
+          <div className="border-t border-white/15 pt-4">
+            <UserInfo
+              displayName={
+                displayName
+              }
+              email={
+                profile.email
+              }
+              roleLabel={
+                roleLabel
+              }
+              isAdmin={
+                isAdmin
+              }
+            />
 
-            {profile.email && (
-              <div
-                style={{
-                  marginTop: "3px",
-                  fontSize: "10px",
-                  color:
-                    "rgba(255,255,255,.58)",
-                  wordBreak:
-                    "break-word",
-                }}
-              >
-                {profile.email}
-              </div>
-            )}
-
-            <div
-              style={{
-                marginTop: "9px",
-              }}
-            >
-              <span
-                style={{
-                  display:
-                    "inline-block",
-                  padding:
-                    "4px 8px",
-                  borderRadius:
-                    "999px",
-                  background:
-                    isAdmin
-                      ? "#d8b55b"
-                      : "rgba(255,255,255,.14)",
-                  color:
-                    isAdmin
-                      ? "#3e310c"
-                      : "white",
-                  fontSize:
-                    "10px",
-                  fontWeight:
-                    "800",
-                }}
-              >
-                {roleLabel}
-              </span>
-            </div>
-
-            <div
-              style={{
-                marginTop: "14px",
-              }}
-            >
+            <div className="mt-4">
               <LogoutButton />
             </div>
           </div>
         </div>
       </aside>
 
-      <main
-        style={{
-          padding: "30px",
-          minWidth: 0,
-        }}
-      >
-        {children}
+      {/* MOBIL / NETTBRETT TOPP */}
+
+      <div className="sticky top-0 z-40 border-b border-black/10 bg-[#18382a] text-white lg:hidden">
+        <div className="flex min-h-[64px] items-center justify-between gap-4 px-4">
+          <div>
+            <div className="text-[17px] font-extrabold">
+              Camping Booking
+            </div>
+
+            <div className="text-[10px] text-white/60">
+              {roleLabel}
+            </div>
+          </div>
+
+          <details className="relative">
+            <summary className="cursor-pointer list-none rounded-lg bg-white/10 px-4 py-2 text-sm font-bold hover:bg-white/15">
+              ☰ Meny
+            </summary>
+
+            <div className="absolute right-0 top-[48px] w-[290px] max-w-[calc(100vw-24px)] rounded-xl border border-white/10 bg-[#18382a] p-3 shadow-2xl">
+              <Navigation
+                isAdmin={
+                  isAdmin
+                }
+              />
+
+              <div className="mt-4 border-t border-white/15 pt-4">
+                <UserInfo
+                  displayName={
+                    displayName
+                  }
+                  email={
+                    profile.email
+                  }
+                  roleLabel={
+                    roleLabel
+                  }
+                  isAdmin={
+                    isAdmin
+                  }
+                />
+
+                <div className="mt-4">
+                  <LogoutButton />
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      {/* INNHOLD */}
+
+      <main className="min-w-0 p-4 sm:p-5 md:p-6 lg:ml-[250px] lg:p-[30px]">
+        <div className="mx-auto w-full max-w-[1600px]">
+          {children}
+        </div>
       </main>
     </div>
+  );
+}
+
+function Navigation({
+  isAdmin,
+}: {
+  isAdmin: boolean;
+}) {
+  return (
+    <nav className="flex flex-col gap-2">
+      <MenuLink
+        href="/dashboard"
+        label="Dashboard"
+      />
+
+      <MenuLink
+        href="/dashboard/calendar"
+        label="Kalender"
+      />
+
+      <MenuLink
+        href="/dashboard/reservations"
+        label="Reservasjoner"
+      />
+
+      <MenuLink
+        href="/dashboard/guests"
+        label="Gjester"
+      />
+
+      <MenuLink
+        href="/dashboard/places"
+        label="Plasser"
+      />
+
+      {isAdmin && (
+        <>
+          <div className="my-2 h-px bg-white/15" />
+
+          <div className="px-3 text-[10px] uppercase tracking-[0.08em] text-white/55">
+            Administrasjon
+          </div>
+
+          <MenuLink
+            href="/dashboard/staff"
+            label="Ansatte"
+          />
+        </>
+      )}
+    </nav>
+  );
+}
+
+function MenuLink({
+  href,
+  label,
+}: {
+  href: string;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="rounded-lg bg-white/[0.08] px-3 py-3 text-[13px] font-bold text-white no-underline transition hover:bg-white/[0.15]"
+    >
+      {label}
+    </Link>
+  );
+}
+
+function UserInfo({
+  displayName,
+  email,
+  roleLabel,
+  isAdmin,
+}: {
+  displayName: string;
+  email: string | null;
+  roleLabel: string;
+  isAdmin: boolean;
+}) {
+  return (
+    <>
+      <div className="text-[13px] font-extrabold">
+        {displayName}
+      </div>
+
+      {email && (
+        <div className="mt-1 break-words text-[10px] text-white/60">
+          {email}
+        </div>
+      )}
+
+      <div className="mt-2">
+        <span
+          className={
+            isAdmin
+              ? "inline-block rounded-full bg-[#d8b55b] px-2 py-1 text-[10px] font-extrabold text-[#3e310c]"
+              : "inline-block rounded-full bg-white/15 px-2 py-1 text-[10px] font-extrabold text-white"
+          }
+        >
+          {roleLabel}
+        </span>
+      </div>
+    </>
   );
 }
 
@@ -306,40 +304,22 @@ function AccessDeniedPage({
   message: string;
 }) {
   return (
-    <div style={accessPageStyle}>
-      <div style={accessCardStyle}>
-        <h1
-          style={{
-            marginTop: 0,
-            marginBottom: "10px",
-          }}
-        >
+    <div className="grid min-h-screen place-items-center bg-[#f4f7f5] p-5">
+      <div className="w-full max-w-[500px] rounded-[14px] border border-[#dbe4df] bg-white p-6">
+        <h1 className="mb-2 mt-0 text-2xl font-bold">
           {title}
         </h1>
 
-        <p
-          style={{
-            lineHeight: "1.5",
-          }}
-        >
+        <p className="leading-6">
           {message}
         </p>
 
-        <p
-          style={{
-            color: "#6b7a72",
-            fontSize: "13px",
-          }}
-        >
+        <p className="text-[13px] text-[#6b7a72]">
           Kontakt administrator hvis du mener
           dette er feil.
         </p>
 
-        <div
-          style={{
-            marginTop: "18px",
-          }}
-        >
+        <div className="mt-5">
           <LogoutButton />
         </div>
       </div>
@@ -363,32 +343,3 @@ function translateRole(
 
   return roles[role];
 }
-
-const linkStyle = {
-  color: "white",
-  textDecoration: "none",
-  padding: "12px",
-  borderRadius: "8px",
-  background:
-    "rgba(255,255,255,0.08)",
-  fontWeight: "700",
-  fontSize: "13px",
-};
-
-const accessPageStyle = {
-  minHeight: "100vh",
-  display: "grid",
-  placeItems: "center",
-  background: "#f4f7f5",
-  padding: "20px",
-};
-
-const accessCardStyle = {
-  width: "100%",
-  maxWidth: "500px",
-  background: "white",
-  border:
-    "1px solid #dbe4df",
-  borderRadius: "14px",
-  padding: "25px",
-};
