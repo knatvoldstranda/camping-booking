@@ -174,13 +174,7 @@ export default async function ReservationPage({
     <div>
       <div style={topStyle}>
         <div>
-          <div
-            style={{
-              color: "#6b7a72",
-              fontSize: "13px",
-              marginBottom: "5px",
-            }}
-          >
+          <div style={eyebrowStyle}>
             Reservasjon
           </div>
 
@@ -189,24 +183,14 @@ export default async function ReservationPage({
           </h1>
 
           {guest && (
-            <div
-              style={{
-                marginTop: "5px",
-                fontSize: "18px",
-              }}
-            >
+            <div style={guestTitleStyle}>
               {guest.first_name}{" "}
               {guest.last_name}
             </div>
           )}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-          }}
-        >
+        <div style={topButtonsStyle}>
           <Link
             href={`/dashboard/reservations/${reservation.id}/edit`}
             style={editButtonStyle}
@@ -234,6 +218,104 @@ export default async function ReservationPage({
           ⚠ {query.error}
         </div>
       )}
+
+      {/* HURTIG STATUS */}
+
+      <div style={quickStatusCardStyle}>
+        <div>
+          <div style={quickStatusTitleStyle}>
+            Dagens drift
+          </div>
+
+          <div style={quickStatusSubtitleStyle}>
+            Gjeldende status:{" "}
+            <StatusBadge
+              status={
+                reservation.stay_status
+              }
+            />
+          </div>
+        </div>
+
+        <div style={quickActionStyle}>
+          {reservation.stay_status ===
+            "reserved" && (
+            <form
+              action={
+                updateReservationStatus
+              }
+            >
+              <input
+                type="hidden"
+                name="reservation_id"
+                value={reservation.id}
+              />
+
+              <input
+                type="hidden"
+                name="stay_status"
+                value="checked_in"
+              />
+
+              <button
+                type="submit"
+                style={checkInButtonStyle}
+              >
+                ✓ Sjekk inn
+              </button>
+            </form>
+          )}
+
+          {reservation.stay_status ===
+            "checked_in" && (
+            <form
+              action={
+                updateReservationStatus
+              }
+            >
+              <input
+                type="hidden"
+                name="reservation_id"
+                value={reservation.id}
+              />
+
+              <input
+                type="hidden"
+                name="stay_status"
+                value="checked_out"
+              />
+
+              <button
+                type="submit"
+                style={checkOutButtonStyle}
+              >
+                ✓ Sjekk ut
+              </button>
+            </form>
+          )}
+
+          {reservation.stay_status ===
+            "checked_out" && (
+            <div style={finishedBadgeStyle}>
+              ✓ Opphold avsluttet
+            </div>
+          )}
+
+          {reservation.stay_status ===
+            "no_show" && (
+            <div style={noShowBadgeStyle}>
+              Ikke møtt
+            </div>
+          )}
+
+          {reservation.stay_status ===
+            "cancelled" && (
+            <div style={cancelledBadgeStyle}>
+              Avbestilt
+            </div>
+          )}
+        </div>
+      </div>
 
       <div style={statsGridStyle}>
         <StatCard
@@ -398,6 +480,17 @@ export default async function ReservationPage({
                 reservation.stay_status
               }
             />
+          </div>
+
+          <div style={advancedStatusStyle}>
+            <div style={advancedTitleStyle}>
+              Andre statusvalg
+            </div>
+
+            <div style={advancedTextStyle}>
+              Bruk dette ved for eksempel
+              avbestilling eller ikke møtt.
+            </div>
           </div>
 
           <form
@@ -821,22 +914,11 @@ function StatCard({
 }) {
   return (
     <div style={cardStyle}>
-      <div
-        style={{
-          color: "#6b7a72",
-          fontSize: "13px",
-        }}
-      >
+      <div style={statLabelStyle}>
         {title}
       </div>
 
-      <div
-        style={{
-          fontSize: "28px",
-          fontWeight: "800",
-          marginTop: "5px",
-        }}
-      >
+      <div style={statValueStyle}>
         {value}
       </div>
     </div>
@@ -852,15 +934,13 @@ function InfoRow({
 }) {
   return (
     <div style={infoRowStyle}>
-      <strong
-        style={{
-          color: "#6b7a72",
-        }}
-      >
+      <strong style={infoLabelStyle}>
         {label}
       </strong>
 
-      <span>{value}</span>
+      <span>
+        {value}
+      </span>
     </div>
   );
 }
@@ -910,7 +990,8 @@ function StatusBadge({
   };
 
   const value =
-    map[status] ?? map.reserved;
+    map[status] ??
+    map.reserved;
 
   return (
     <span
@@ -918,8 +999,10 @@ function StatusBadge({
         display: "inline-block",
         padding: "6px 10px",
         borderRadius: "999px",
-        background: value.background,
-        color: value.color,
+        background:
+          value.background,
+        color:
+          value.color,
         fontWeight: "700",
         fontSize: "12px",
       }}
@@ -974,8 +1057,99 @@ const topStyle = {
   marginBottom: "25px",
 };
 
+const topButtonsStyle = {
+  display: "flex",
+  gap: "10px",
+  flexWrap: "wrap" as const,
+};
+
+const eyebrowStyle = {
+  color: "#6b7a72",
+  fontSize: "13px",
+  marginBottom: "5px",
+};
+
 const titleStyle = {
   fontSize: "30px",
+  fontWeight: "800",
+};
+
+const guestTitleStyle = {
+  marginTop: "5px",
+  fontSize: "18px",
+};
+
+const quickStatusCardStyle = {
+  background: "white",
+  border: "1px solid #dbe4df",
+  borderRadius: "14px",
+  padding: "18px",
+  marginBottom: "20px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "20px",
+};
+
+const quickStatusTitleStyle = {
+  fontSize: "20px",
+  fontWeight: "800",
+};
+
+const quickStatusSubtitleStyle = {
+  color: "#6b7a72",
+  fontSize: "13px",
+  marginTop: "7px",
+};
+
+const quickActionStyle = {
+  display: "flex",
+  gap: "10px",
+};
+
+const checkInButtonStyle = {
+  border: "none",
+  background: "#2f6f4e",
+  color: "white",
+  padding: "14px 22px",
+  borderRadius: "10px",
+  fontSize: "15px",
+  fontWeight: "800",
+  cursor: "pointer",
+};
+
+const checkOutButtonStyle = {
+  border: "none",
+  background: "#315f87",
+  color: "white",
+  padding: "14px 22px",
+  borderRadius: "10px",
+  fontSize: "15px",
+  fontWeight: "800",
+  cursor: "pointer",
+};
+
+const finishedBadgeStyle = {
+  background: "#e7efeb",
+  color: "#315944",
+  padding: "12px 16px",
+  borderRadius: "10px",
+  fontWeight: "800",
+};
+
+const noShowBadgeStyle = {
+  background: "#fff0c9",
+  color: "#805b08",
+  padding: "12px 16px",
+  borderRadius: "10px",
+  fontWeight: "800",
+};
+
+const cancelledBadgeStyle = {
+  background: "#f7dddd",
+  color: "#812d2d",
+  padding: "12px 16px",
+  borderRadius: "10px",
   fontWeight: "800",
 };
 
@@ -1002,6 +1176,17 @@ const cardStyle = {
   padding: "18px",
 };
 
+const statLabelStyle = {
+  color: "#6b7a72",
+  fontSize: "13px",
+};
+
+const statValueStyle = {
+  fontSize: "28px",
+  fontWeight: "800",
+  marginTop: "5px",
+};
+
 const headingStyle = {
   fontSize: "20px",
   fontWeight: "700",
@@ -1016,6 +1201,28 @@ const infoRowStyle = {
   padding: "10px 0",
   borderBottom:
     "1px solid #e5ebe8",
+};
+
+const infoLabelStyle = {
+  color: "#6b7a72",
+};
+
+const advancedStatusStyle = {
+  background: "#f7faf8",
+  borderRadius: "9px",
+  padding: "10px",
+  marginBottom: "15px",
+};
+
+const advancedTitleStyle = {
+  fontWeight: "700",
+  fontSize: "13px",
+};
+
+const advancedTextStyle = {
+  color: "#6b7a72",
+  fontSize: "11px",
+  marginTop: "3px",
 };
 
 const labelStyle = {
@@ -1081,7 +1288,8 @@ const textLinkStyle = {
 
 const tableStyle = {
   width: "100%",
-  borderCollapse: "collapse" as const,
+  borderCollapse:
+    "collapse" as const,
 };
 
 const headerStyle = {
