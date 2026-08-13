@@ -1,7 +1,15 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/server";
+import { LogoutButton } from "@/components/logout-button";
 
 export const instant = false;
+
+type StaffRole =
+  | "admin"
+  | "reception"
+  | "read_only";
 
 export default async function DashboardLayout({
   children,
@@ -11,34 +19,25 @@ export default async function DashboardLayout({
   const supabase =
     await createClient();
 
+  // --------------------------------------------------
+  // 1. KONTROLLER AT BRUKEREN ER INNLOGGET
+  // --------------------------------------------------
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return (
-      <div style={accessPageStyle}>
-        <div style={accessCardStyle}>
-          <h1>Ikke innlogget</h1>
-
-          <p>
-            Du må logge inn for å bruke
-            reservasjonsprogrammet.
-          </p>
-
-          <Link
-            href="/auth/login"
-            style={primaryButtonStyle}
-          >
-            Gå til innlogging
-          </Link>
-        </div>
-      </div>
-    );
+    redirect("/auth/login");
   }
+
+  // --------------------------------------------------
+  // 2. HENT ANSATTPROFIL
+  // --------------------------------------------------
 
   const {
     data: profile,
+    error: profileError,
   } = await supabase
     .from("profiles")
     .select(`
@@ -51,47 +50,64 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .maybeSingle();
 
+  // --------------------------------------------------
+  // 3. KONTROLLER AT BRUKEREN HAR AKTIV TILGANG
+  // --------------------------------------------------
+
   if (
+    profileError ||
     !profile ||
     !profile.active
   ) {
     return (
-      <div style={accessPageStyle}>
-        <div style={accessCardStyle}>
-          <h1>
-            Ingen aktiv tilgang
-          </h1>
-
-          <p>
-            Brukeren din har ikke
-            aktiv tilgang til
-            reservasjonsprogrammet.
-          </p>
-
-          <p
-            style={{
-              color: "#6b7a72",
-              fontSize: "13px",
-            }}
-          >
-            Kontakt administrator.
-          </p>
-        </div>
-      </div>
+      <AccessDeniedPage
+        title="Ingen aktiv tilgang"
+        message="Brukeren din har ikke aktiv tilgang til reservasjonsprogrammet."
+      />
     );
   }
 
-  const roleLabel =
-    translateRole(
-      profile.role
+  // --------------------------------------------------
+  // 4. KONTROLLER AT ROLLEN ER GYLDIG
+  // --------------------------------------------------
+
+  const allowedRoles: StaffRole[] = [
+    "admin",
+    "reception",
+    "read_only",
+  ];
+
+  if (
+    !allowedRoles.includes(
+      profile.role as StaffRole
+    )
+  ) {
+    return (
+      <AccessDeniedPage
+        title="Ugyldig brukerrolle"
+        message="Brukeren din har en rolle som ikke er godkjent for reservasjonsprogrammet."
+      />
     );
+  }
+
+  const role =
+    profile.role as StaffRole;
+
+  const roleLabel =
+    translateRole(role);
+
+  const isAdmin =
+    role === "admin";
+
+  const isReadOnly =
+    role === "read_only";
 
   return (
     <div
       style={{
         display: "grid",
         gridTemplateColumns:
-          "250px 1fr",
+          "250px minmax(0, 1fr)",
         minHeight: "100vh",
         background: "#f4f7f5",
       }}
@@ -102,19 +118,17 @@ export default async function DashboardLayout({
           color: "white",
           padding: "24px 16px",
           display: "flex",
-          flexDirection:
-            "column",
+          flexDirection: "column",
+          minHeight: "100vh",
         }}
       >
         <div>
           <h2
             style={{
-              marginBottom:
-                "5px",
-              fontSize:
-                "21px",
-              fontWeight:
-                "800",
+              margin: 0,
+              marginBottom: "5px",
+              fontSize: "21px",
+              fontWeight: "800",
             }}
           >
             Camping Booking
@@ -122,12 +136,10 @@ export default async function DashboardLayout({
 
           <div
             style={{
-              fontSize:
-                "11px",
+              fontSize: "11px",
               color:
                 "rgba(255,255,255,.6)",
-              marginBottom:
-                "28px",
+              marginBottom: "28px",
             }}
           >
             Reservasjonssystem
@@ -136,8 +148,7 @@ export default async function DashboardLayout({
           <nav
             style={{
               display: "flex",
-              flexDirection:
-                "column",
+              flexDirection: "column",
               gap: "9px",
             }}
           >
@@ -176,13 +187,11 @@ export default async function DashboardLayout({
               Plasser
             </Link>
 
-            {profile.role ===
-              "admin" && (
+            {isAdmin && (
               <>
                 <div
                   style={{
-                    height:
-                      "1px",
+                    height: "1px",
                     background:
                       "rgba(255,255,255,.14)",
                     margin:
@@ -192,8 +201,7 @@ export default async function DashboardLayout({
 
                 <div
                   style={{
-                    fontSize:
-                      "10px",
+                    fontSize: "10px",
                     textTransform:
                       "uppercase",
                     letterSpacing:
@@ -208,9 +216,7 @@ export default async function DashboardLayout({
                 </div>
 
                 <Link
-                  style={
-                    linkStyle
-                  }
+                  style={linkStyle}
                   href="/dashboard/staff"
                 >
                   Ansatte
@@ -222,26 +228,53 @@ export default async function DashboardLayout({
 
         <div
           style={{
-            marginTop:
-              "auto",
-            paddingTop:
-              "30px",
+            marginTop: "auto",
+            paddingTop: "30px",
           }}
         >
+          {isReadOnly && (
+            <div
+              style={{
+                background:
+                  "rgba(255,255,255,.10)",
+                border:
+                  "1px solid rgba(255,255,255,.14)",
+                borderRadius: "9px",
+                padding: "10px",
+                marginBottom: "14px",
+                fontSize: "11px",
+                lineHeight: "1.45",
+              }}
+            >
+              <strong>
+                Kun lesetilgang
+              </strong>
+
+              <div
+                style={{
+                  marginTop: "3px",
+                  color:
+                    "rgba(255,255,255,.7)",
+                }}
+              >
+                Denne brukeren kan se data,
+                men kan ikke opprette eller
+                endre informasjon.
+              </div>
+            </div>
+          )}
+
           <div
             style={{
               borderTop:
                 "1px solid rgba(255,255,255,.15)",
-              paddingTop:
-                "16px",
+              paddingTop: "16px",
             }}
           >
             <div
               style={{
-                fontWeight:
-                  "800",
-                fontSize:
-                  "13px",
+                fontWeight: "800",
+                fontSize: "13px",
               }}
             >
               {profile.full_name ||
@@ -252,14 +285,11 @@ export default async function DashboardLayout({
             {profile.email && (
               <div
                 style={{
-                  marginTop:
-                    "3px",
-                  fontSize:
-                    "10px",
+                  marginTop: "3px",
+                  fontSize: "10px",
                   color:
                     "rgba(255,255,255,.58)",
-                  wordBreak:
-                    "break-word",
+                  wordBreak: "break-word",
                 }}
               >
                 {profile.email}
@@ -268,36 +298,36 @@ export default async function DashboardLayout({
 
             <div
               style={{
-                marginTop:
-                  "9px",
+                marginTop: "9px",
               }}
             >
               <span
                 style={{
-                  display:
-                    "inline-block",
-                  padding:
-                    "4px 8px",
-                  borderRadius:
-                    "999px",
+                  display: "inline-block",
+                  padding: "4px 8px",
+                  borderRadius: "999px",
                   background:
-                    profile.role ===
-                    "admin"
+                    isAdmin
                       ? "#d8b55b"
                       : "rgba(255,255,255,.14)",
                   color:
-                    profile.role ===
-                    "admin"
+                    isAdmin
                       ? "#3e310c"
                       : "white",
-                  fontSize:
-                    "10px",
-                  fontWeight:
-                    "800",
+                  fontSize: "10px",
+                  fontWeight: "800",
                 }}
               >
                 {roleLabel}
               </span>
+            </div>
+
+            <div
+              style={{
+                marginTop: "14px",
+              }}
+            >
+              <LogoutButton />
             </div>
           </div>
         </div>
@@ -315,11 +345,60 @@ export default async function DashboardLayout({
   );
 }
 
+function AccessDeniedPage({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <div style={accessPageStyle}>
+      <div style={accessCardStyle}>
+        <h1
+          style={{
+            marginTop: 0,
+            marginBottom: "10px",
+          }}
+        >
+          {title}
+        </h1>
+
+        <p
+          style={{
+            lineHeight: "1.5",
+          }}
+        >
+          {message}
+        </p>
+
+        <p
+          style={{
+            color: "#6b7a72",
+            fontSize: "13px",
+          }}
+        >
+          Kontakt administrator hvis du mener
+          dette er feil.
+        </p>
+
+        <div
+          style={{
+            marginTop: "18px",
+          }}
+        >
+          <LogoutButton />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function translateRole(
-  role: string
+  role: StaffRole
 ) {
   const roles: Record<
-    string,
+    StaffRole,
     string
   > = {
     admin:
@@ -332,10 +411,7 @@ function translateRole(
       "Kun lesing",
   };
 
-  return (
-    roles[role] ??
-    role
-  );
+  return roles[role];
 }
 
 const linkStyle = {
@@ -358,21 +434,11 @@ const accessPageStyle = {
 };
 
 const accessCardStyle = {
+  width: "100%",
   maxWidth: "500px",
   background: "white",
   border:
     "1px solid #dbe4df",
   borderRadius: "14px",
   padding: "25px",
-};
-
-const primaryButtonStyle = {
-  display: "inline-block",
-  marginTop: "15px",
-  background: "#2f6f4e",
-  color: "white",
-  padding: "10px 14px",
-  borderRadius: "9px",
-  textDecoration: "none",
-  fontWeight: "700",
 };
