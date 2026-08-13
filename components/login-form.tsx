@@ -27,7 +27,9 @@ export function LoginForm({
 
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
     setIsLoading(true);
@@ -36,11 +38,13 @@ export function LoginForm({
     try {
       const supabase = createClient();
 
-      const { data, error: loginError } =
-        await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
+      const {
+        data,
+        error: loginError,
+      } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
 
       if (loginError) {
         setError(loginError.message);
@@ -57,7 +61,10 @@ export function LoginForm({
       router.push("/dashboard");
       router.refresh();
     } catch (err: unknown) {
-      console.error("Login error:", err);
+      console.error(
+        "Login error:",
+        err
+      );
 
       setError(
         err instanceof Error
@@ -71,7 +78,10 @@ export function LoginForm({
 
   return (
     <div
-      className={cn("flex flex-col gap-6", className)}
+      className={cn(
+        "flex flex-col gap-6",
+        className
+      )}
       {...props}
     >
       <Card>
@@ -102,7 +112,9 @@ export function LoginForm({
                   required
                   value={email}
                   onChange={(e) =>
-                    setEmail(e.target.value)
+                    setEmail(
+                      e.target.value
+                    )
                   }
                 />
               </div>
@@ -129,7 +141,9 @@ export function LoginForm({
                   required
                   value={password}
                   onChange={(e) =>
-                    setPassword(e.target.value)
+                    setPassword(
+                      e.target.value
+                    )
                   }
                 />
               </div>
