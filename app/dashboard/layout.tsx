@@ -8,8 +8,7 @@ export const instant = false;
 
 type StaffRole =
   | "admin"
-  | "reception"
-  | "read_only";
+  | "reception";
 
 export default async function DashboardLayout({
   children,
@@ -19,10 +18,6 @@ export default async function DashboardLayout({
   const supabase =
     await createClient();
 
-  // --------------------------------------------------
-  // 1. KONTROLLER AT BRUKEREN ER INNLOGGET
-  // --------------------------------------------------
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -30,10 +25,6 @@ export default async function DashboardLayout({
   if (!user) {
     redirect("/auth/login");
   }
-
-  // --------------------------------------------------
-  // 2. HENT ANSATTPROFIL
-  // --------------------------------------------------
 
   const {
     data: profile,
@@ -50,10 +41,6 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .maybeSingle();
 
-  // --------------------------------------------------
-  // 3. KONTROLLER AT BRUKEREN HAR AKTIV TILGANG
-  // --------------------------------------------------
-
   if (
     profileError ||
     !profile ||
@@ -67,14 +54,9 @@ export default async function DashboardLayout({
     );
   }
 
-  // --------------------------------------------------
-  // 4. KONTROLLER AT ROLLEN ER GYLDIG
-  // --------------------------------------------------
-
   const allowedRoles: StaffRole[] = [
     "admin",
     "reception",
-    "read_only",
   ];
 
   if (
@@ -93,14 +75,11 @@ export default async function DashboardLayout({
   const role =
     profile.role as StaffRole;
 
-  const roleLabel =
-    translateRole(role);
-
   const isAdmin =
     role === "admin";
 
-  const isReadOnly =
-    role === "read_only";
+  const roleLabel =
+    translateRole(role);
 
   return (
     <div
@@ -232,38 +211,6 @@ export default async function DashboardLayout({
             paddingTop: "30px",
           }}
         >
-          {isReadOnly && (
-            <div
-              style={{
-                background:
-                  "rgba(255,255,255,.10)",
-                border:
-                  "1px solid rgba(255,255,255,.14)",
-                borderRadius: "9px",
-                padding: "10px",
-                marginBottom: "14px",
-                fontSize: "11px",
-                lineHeight: "1.45",
-              }}
-            >
-              <strong>
-                Kun lesetilgang
-              </strong>
-
-              <div
-                style={{
-                  marginTop: "3px",
-                  color:
-                    "rgba(255,255,255,.7)",
-                }}
-              >
-                Denne brukeren kan se data,
-                men kan ikke opprette eller
-                endre informasjon.
-              </div>
-            </div>
-          )}
-
           <div
             style={{
               borderTop:
@@ -289,7 +236,8 @@ export default async function DashboardLayout({
                   fontSize: "10px",
                   color:
                     "rgba(255,255,255,.58)",
-                  wordBreak: "break-word",
+                  wordBreak:
+                    "break-word",
                 }}
               >
                 {profile.email}
@@ -303,9 +251,12 @@ export default async function DashboardLayout({
             >
               <span
                 style={{
-                  display: "inline-block",
-                  padding: "4px 8px",
-                  borderRadius: "999px",
+                  display:
+                    "inline-block",
+                  padding:
+                    "4px 8px",
+                  borderRadius:
+                    "999px",
                   background:
                     isAdmin
                       ? "#d8b55b"
@@ -314,8 +265,10 @@ export default async function DashboardLayout({
                     isAdmin
                       ? "#3e310c"
                       : "white",
-                  fontSize: "10px",
-                  fontWeight: "800",
+                  fontSize:
+                    "10px",
+                  fontWeight:
+                    "800",
                 }}
               >
                 {roleLabel}
@@ -406,9 +359,6 @@ function translateRole(
 
     reception:
       "Resepsjon",
-
-    read_only:
-      "Kun lesing",
   };
 
   return roles[role];

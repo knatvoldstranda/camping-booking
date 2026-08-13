@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+
 import { updateStaff } from "./actions";
 
 export const instant = false;
@@ -68,8 +69,7 @@ export default async function StaffPage({
     .order(
       "created_at",
       {
-        ascending:
-          true,
+        ascending: true,
       }
     );
 
@@ -90,6 +90,28 @@ export default async function StaffPage({
 
   const list =
     staff ?? [];
+
+  const activeStaff =
+    list.filter(
+      (person) =>
+        person.active
+    ).length;
+
+  const admins =
+    list.filter(
+      (person) =>
+        person.active &&
+        person.role ===
+          "admin"
+    ).length;
+
+  const reception =
+    list.filter(
+      (person) =>
+        person.active &&
+        person.role ===
+          "reception"
+    ).length;
 
   return (
     <div>
@@ -117,6 +139,23 @@ export default async function StaffPage({
         </div>
       )}
 
+      <div style={statsGridStyle}>
+        <StatCard
+          title="Aktive ansatte"
+          value={activeStaff}
+        />
+
+        <StatCard
+          title="Administratorer"
+          value={admins}
+        />
+
+        <StatCard
+          title="Resepsjon"
+          value={reception}
+        />
+      </div>
+
       <div
         style={{
           ...cardStyle,
@@ -131,17 +170,12 @@ export default async function StaffPage({
         <div style={roleGridStyle}>
           <RoleInfo
             title="Administrator"
-            text="Full tilgang. Kan administrere ansatte og systemdata."
+            text="Full tilgang til systemet. Kan administrere ansatte og endre roller."
           />
 
           <RoleInfo
             title="Resepsjon"
-            text="Kan håndtere gjester, reservasjoner, betalinger og daglig drift."
-          />
-
-          <RoleInfo
-            title="Kun lesing"
-            text="Kan se systemet, men kan ikke opprette eller endre data."
+            text="Kan håndtere kalender, gjester, reservasjoner, betalinger og vanlig daglig drift."
           />
         </div>
       </div>
@@ -221,7 +255,10 @@ export default async function StaffPage({
                   <select
                     name="role"
                     defaultValue={
-                      person.role
+                      person.role ===
+                      "admin"
+                        ? "admin"
+                        : "reception"
                     }
                     style={inputStyle}
                   >
@@ -231,10 +268,6 @@ export default async function StaffPage({
 
                     <option value="reception">
                       Resepsjon
-                    </option>
-
-                    <option value="read_only">
-                      Kun lesing
                     </option>
                   </select>
                 </label>
@@ -277,7 +310,7 @@ export default async function StaffPage({
         }}
       >
         <strong>
-          Legge til nye ansatte
+          Nye ansatte
         </strong>
 
         <div
@@ -285,11 +318,31 @@ export default async function StaffPage({
             marginTop: "5px",
           }}
         >
-          Foreløpig inviterer du nye ansatte via
+          Nye brukere opprettes foreløpig via
           Supabase → Authentication → Users.
-          Når brukeren opprettes, vil den automatisk
-          dukke opp her som Resepsjon.
+          Deretter kan Administrator velge
+          hvilken rolle brukeren skal ha her.
         </div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+}: {
+  title: string;
+  value: number;
+}) {
+  return (
+    <div style={cardStyle}>
+      <div style={statLabelStyle}>
+        {title}
+      </div>
+
+      <div style={statValueStyle}>
+        {value}
       </div>
     </div>
   );
@@ -346,6 +399,14 @@ const subtitleStyle = {
   color: "#6b7a72",
 };
 
+const statsGridStyle = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(3, minmax(0,1fr))",
+  gap: "15px",
+  marginBottom: "20px",
+};
+
 const cardStyle = {
   background: "white",
   border:
@@ -354,12 +415,25 @@ const cardStyle = {
   padding: "18px",
 };
 
+const statLabelStyle = {
+  color: "#6b7a72",
+  fontSize: "13px",
+};
+
+const statValueStyle = {
+  fontSize: "28px",
+  fontWeight: "800",
+  marginTop: "5px",
+};
+
 const sectionTopStyle = {
   display: "flex",
   justifyContent:
     "space-between",
-  alignItems: "center",
-  marginBottom: "15px",
+  alignItems:
+    "center",
+  marginBottom:
+    "15px",
 };
 
 const sectionTitleStyle = {
@@ -370,7 +444,7 @@ const sectionTitleStyle = {
 const roleGridStyle = {
   display: "grid",
   gridTemplateColumns:
-    "repeat(3, minmax(0,1fr))",
+    "repeat(2, minmax(0,1fr))",
   gap: "12px",
   marginTop: "15px",
 };

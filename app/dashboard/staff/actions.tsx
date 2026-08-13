@@ -39,7 +39,6 @@ export async function updateStaff(
   const validRoles = [
     "admin",
     "reception",
-    "read_only",
   ];
 
   if (
@@ -86,10 +85,7 @@ export async function updateStaff(
       "admin"
   ) {
     redirect(
-      "/dashboard?error=" +
-        encodeURIComponent(
-          "Du har ikke tilgang til å administrere ansatte."
-        )
+      "/dashboard"
     );
   }
 
