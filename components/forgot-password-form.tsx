@@ -24,76 +24,137 @@ export function ForgotPasswordForm({
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
-    const supabase = createClient();
+
     setIsLoading(true);
     setError(null);
 
     try {
-      // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
-      });
-      if (error) throw error;
+      const supabase = createClient();
+
+      const redirectTo =
+        `${window.location.origin}/auth/confirm?next=/auth/update-password`;
+
+      const { error } =
+        await supabase.auth.resetPasswordForEmail(
+          email.trim(),
+          {
+            redirectTo,
+          }
+        );
+
+      if (error) {
+        throw error;
+      }
+
       setSuccess(true);
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Det oppstod en feil ved sending av e-post."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div
+      className={cn(
+        "flex flex-col gap-6",
+        className
+      )}
+      {...props}
+    >
       {success ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+            <CardTitle className="text-2xl">
+              Sjekk e-posten din
+            </CardTitle>
+
+            <CardDescription>
+              Vi har sendt instruksjoner for å endre passordet.
+            </CardDescription>
           </CardHeader>
+
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive
-              a password reset email.
+              Hvis e-postadressen finnes i systemet,
+              vil du motta en lenke for å velge nytt passord.
             </p>
+
+            <div className="mt-4 text-center text-sm">
+              <Link
+                href="/auth/login"
+                className="underline underline-offset-4"
+              >
+                Tilbake til innlogging
+              </Link>
+            </div>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+            <CardTitle className="text-2xl">
+              Glemt passord
+            </CardTitle>
+
             <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
-              password
+              Skriv inn e-postadressen din, så sender vi
+              en lenke for å velge nytt passord.
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleForgotPassword}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">
+                    E-post
+                  </Label>
+
                   <Input
                     id="email"
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="din@epost.no"
+                    autoComplete="email"
                     required
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) =>
+                      setEmail(e.target.value)
+                    }
                   />
                 </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset email"}
+
+                {error && (
+                  <p className="text-sm text-red-500">
+                    {error}
+                  </p>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading
+                    ? "Sender..."
+                    : "Send lenke"}
                 </Button>
               </div>
+
               <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
                 <Link
                   href="/auth/login"
                   className="underline underline-offset-4"
                 >
-                  Login
+                  Tilbake til innlogging
                 </Link>
               </div>
             </form>
